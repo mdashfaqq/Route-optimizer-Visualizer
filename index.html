@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pathfinding Algorithms Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+        }
+
+        .main-panel {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 25px;
+        }
+
+        .stats-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #495057;
+            border: 2px solid #e9ecef;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .select {
+            padding: 8px 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            background: white;
+            font-size: 14px;
+        }
+
+        .grid-container {
+            display: grid;
+            gap: 2px;
+            margin: 20px 0;
+            justify-content: center;
+        }
+
+        .grid-cell {
+            width: 25px;
+            height: 25px;
+            border: 1px solid #e9ecef;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 3px;
+        }
+
+        .grid-cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
+        }
+
+        .cell-start { 
+            background: #28a745; 
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 10px rgba(40, 167, 69, 0.6);
+        }
+        .cell-end { 
+            background: #dc3545; 
+            animation: pulseRed 2s infinite;
+            box-shadow: 0 0 10px rgba(220, 53, 69, 0.6);
+        }
+        .cell-wall { background: #6c757d; }
+        .cell-path { background: #007bff; }
+        .cell-animated { background: #17a2b8; }
+        .cell-grass { background: #90EE90; }
+        .cell-road { background: #D3D3D3; }
+        .cell-water { background: #87CEEB; }
+        .cell-mountain { background: #F4A460; }
+        .cell-empty { background: #f8f9fa; }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 10px rgba(40, 167, 69, 0.6);
+            }
+            50% {
+                transform: scale(1.1);
+                box-shadow: 0 0 20px rgba(40, 167, 69, 0.8);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 10px rgba(40, 167, 69, 0.6);
+            }
+        }
+
+        @keyframes pulseRed {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 10px rgba(220, 53, 69, 0.6);
+            }
+            50% {
+                transform: scale(1.1);
+                box-shadow: 0 0 20px rgba(220, 53, 69, 0.8);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 10px rgba(220, 53, 69, 0.6);
+            }
+        }
+
+        .mode-buttons {
+            display: flex;
+            gap: 5px;
+            margin: 10px 0;
+        }
+
+        .mode-btn {
+            padding: 8px 16px;
+            border: 2px solid #e9ecef;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .mode-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .terrain-buttons {
+            display: flex;
+            gap: 5px;
+            margin: 10px 0;
+        }
+
+        .terrain-btn {
+            padding: 6px 12px;
+            border: 2px solid #e9ecef;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .terrain-btn.active {
+            background: #ffc107;
+            color: #212529;
+            border-color: #ffc107;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 10px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+
+        .info-list {
+            list-style: none;
+        }
+
+        .info-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 14px;
+        }
+
+        .info-list li:last-child {
+            border-bottom: none;
+        }
+
+        .terrain-list {
+            list-style: none;
+        }
+
+        .terrain-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 14px;
+        }
+
+        .terrain-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            min-width: 300px;
+        }
+
+        .modal input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .saved-routes {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .route-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            margin: 10px 0;
+            background: #f8f9fa;
+        }
+
+        .route-info h4 {
+            margin: 0;
+            color: #495057;
+        }
+
+        .route-info p {
+            margin: 5px 0 0 0;
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .route-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .grid-cell {
+                width: 20px;
+                height: 20px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .title {
+                font-size: 2rem;
+            }
+        }
+
+        .terrain-list li:last-child {
+            border-bottom: none;
+        }
+
+        .algorithm-description {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #495057;
+        }
+
+        .algorithm-description h4 {
+            color: #007bff;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .algorithm-description p {
+            margin-bottom: 12px;
+        }
+
+        .algorithm-description ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .algorithm-description li {
+            margin-bottom: 5px;
+            border: none;
+            padding: 0;
+        }
+
+        .algorithm-description strong {
+            color: #007bff;
+        }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+        <div class="main-panel">
+            <div class="header">
+                <h1 class="title">🚀 Pathfinding Algorithms Visualizer</h1>
+                <div>
+                    <span class="btn btn-secondary" id="gridSizeDisplay">20×20</span>
+                    <span class="btn btn-secondary" id="algorithmDisplay">A*</span>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-primary" id="findPathBtn">▶️ Find Path</button>
+                <button class="btn btn-secondary" id="resetBtn">🔄 Reset Grid</button>
+                <button class="btn btn-secondary" id="saveBtn">💾 Save Route</button>
+                <button class="btn btn-secondary" id="loadBtn">📁 Load Routes</button>
+                
+                <select class="select" id="gridSizeSelect">
+                    <option value="10">10×10</option>
+                    <option value="15">15×15</option>
+                    <option value="20" selected>20×20</option>
+                    <option value="25">25×25</option>
+                    <option value="30">30×30</option>
+                </select>
+                
+                <select class="select" id="algorithmSelect">
+                    <option value="astar">A* Algorithm</option>
+                    <option value="dijkstra">Dijkstra's Algorithm</option>
+                    <option value="bfs">Breadth-First Search</option>
+                    <option value="dfs">Depth-First Search</option>
+                </select>
+            </div>
+
+            <div class="mode-buttons">
+                <button class="mode-btn active" data-mode="start">🎯 Start</button>
+                <button class="mode-btn" data-mode="end">🎯 End</button>
+                <button class="mode-btn" data-mode="wall">🧱 Wall</button>
+                <button class="mode-btn" data-mode="terrain">🗺️ Terrain</button>
+            </div>
+
+            <div class="terrain-buttons" id="terrainButtons" style="display: none;">
+                <button class="terrain-btn active" data-terrain="grass">🌱 Grass</button>
+                <button class="terrain-btn" data-terrain="road">🛣️ Road</button>
+                <button class="terrain-btn" data-terrain="water">💧 Water</button>
+                <button class="terrain-btn" data-terrain="mountain">⛰️ Mountain</button>
+            </div>
+
+            <div class="grid-container" id="gridContainer"></div>
+
+            <div id="pathInfo" style="display: none;">
+                <p>Path length: <span id="pathLength">0</span> steps</p>
+            </div>
+        </div>
+
+        <div class="stats-panel">
+            <div class="stat-card">
+                <h3>📊 Path Statistics</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="distanceStat">0</div>
+                        <div class="stat-label">Steps</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="timeStat">0</div>
+                        <div class="stat-label">Minutes</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="costStat">0</div>
+                        <div class="stat-label">Cost</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="efficiencyStat">0%</div>
+                        <div class="stat-label">Efficiency</div>
+                    </div>
+                </div>
+                <div id="executionTime" style="display: none; font-size: 12px; color: #6c757d;">
+                    ⏱️ Execution: <span id="execTimeValue">0</span>ms
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <h3>⚡ Algorithm Info</h3>
+                <ul class="info-list">
+                    <li><span>Algorithm:</span><span id="currentAlgorithm">A*</span></li>
+                    <li><span>Grid Size:</span><span id="currentGridSize">20×20</span></li>
+                    <li><span>Total Cells:</span><span id="totalCells">400</span></li>
+                    <li><span>Path Coverage:</span><span id="pathCoverage">0%</span></li>
+                </ul>
+            </div>
+
+            <div class="stat-card">
+                <h3>🗺️ Terrain Types</h3>
+                <ul class="terrain-list">
+                    <li>
+                        <div style="display: flex; align-items: center;">
+                            <div class="terrain-color" style="background: #90EE90;"></div>
+                            <span>Grass</span>
+                        </div>
+                        <span>Cost: 1</span>
+                    </li>
+                    <li>
+                        <div style="display: flex; align-items: center;">
+                            <div class="terrain-color" style="background: #D3D3D3;"></div>
+                            <span>Road</span>
+                        </div>
+                        <span>Cost: 0.5</span>
+                    </li>
+                    <li>
+                        <div style="display: flex; align-items: center;">
+                            <div class="terrain-color" style="background: #87CEEB;"></div>
+                            <span>Water</span>
+                        </div>
+                        <span>Cost: 2</span>
+                    </li>
+                    <li>
+                        <div style="display: flex; align-items: center;">
+                            <div class="terrain-color" style="background: #F4A460;"></div>
+                            <span>Mountain</span>
+                        </div>
+                        <span>Cost: 3</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="stat-card">
+                <h3>🧠 Algorithm Details</h3>
+                <div id="algorithmDescription" class="algorithm-description">
+                    <h4>A* Algorithm</h4>
+                    <p>A* is an informed search algorithm that uses a heuristic function to estimate the cost to reach the goal. It combines the actual cost from start (g) with an estimated cost to goal (h) to find the most efficient path.</p>
+                    <ul>
+                        <li><strong>Best for:</strong> Finding shortest paths with terrain costs</li>
+                        <li><strong>Guarantee:</strong> Optimal solution</li>
+                        <li><strong>Heuristic:</strong> Manhattan distance</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save Modal -->
+    <div class="modal" id="saveModal">
+        <div class="modal-content">
+            <h3>💾 Save Route</h3>
+            <input type="text" id="routeNameInput" placeholder="Enter route name...">
+            <button class="btn btn-primary" id="confirmSaveBtn">Save Route</button>
+            <button class="btn btn-secondary" id="cancelSaveBtn">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Load Modal -->
+    <div class="modal" id="loadModal">
+        <div class="modal-content">
+            <h3>📁 Load Routes</h3>
+            <div class="saved-routes" id="savedRoutesList">
+                <p>No saved routes</p>
+            </div>
+            <button class="btn btn-secondary" id="closeLoadBtn">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let grid = [];
+        let gridSize = 20;
+        let startPoint = null;
+        let endPoint = null;
+        let currentMode = 'start';
+        let selectedTerrain = 'grass';
+        let currentAlgorithm = 'astar';
+        let isAnimating = false;
+        let animationPath = [];
+        let path = [];
+        let executionTime = 0;
+
+        // Terrain costs
+        const terrainCosts = {
+            grass: 1,
+            road: 0.5,
+            water: 2,
+            mountain: 3
+        };
+
+        // Algorithm descriptions
+        const algorithmDescriptions = {
+            'ASTAR': `
+                <h4>A* Algorithm</h4>
+                <p>A* is an informed search algorithm that uses a heuristic function to estimate the cost to reach the goal. It combines the actual cost from start (g) with an estimated cost to goal (h) to find the most efficient path.</p>
+                <ul>
+                    <li><strong>Best for:</strong> Finding shortest paths with terrain costs</li>
+                    <li><strong>Guarantee:</strong> Optimal solution</li>
+                    <li><strong>Heuristic:</strong> Manhattan distance</li>
+                    <li><strong>Complexity:</strong> O(b^d) where b is branching factor</li>
+                </ul>
+            `,
+            'DIJKSTRA': `
+                <h4>Dijkstra's Algorithm</h4>
+                <p>Dijkstra's algorithm finds the shortest path from a start node to all other nodes in a weighted graph. It maintains a set of unvisited nodes and updates distances as it explores.</p>
+                <ul>
+                    <li><strong>Best for:</strong> Finding shortest paths in weighted graphs</li>
+                    <li><strong>Guarantee:</strong> Optimal solution</li>
+                    <li><strong>Approach:</strong> Greedy algorithm</li>
+                    <li><strong>Complexity:</strong> O(V²) where V is number of vertices</li>
+                </ul>
+            `,
+            'BFS': `
+                <h4>Breadth-First Search</h4>
+                <p>BFS explores all nodes at the current depth before moving to nodes at the next depth level. It uses a queue data structure and guarantees the shortest path in unweighted graphs.</p>
+                <ul>
+                    <li><strong>Best for:</strong> Finding shortest paths in unweighted graphs</li>
+                    <li><strong>Guarantee:</strong> Shortest path (unweighted)</li>
+                    <li><strong>Approach:</strong> Level-by-level exploration</li>
+                    <li><strong>Complexity:</strong> O(V + E) where V is vertices, E is edges</li>
+                </ul>
+            `,
+            'DFS': `
+                <h4>Depth-First Search</h4>
+                <p>DFS explores as far as possible along each branch before backtracking. It uses a stack (recursion) and doesn't guarantee the shortest path, but is memory efficient.</p>
+                <ul>
+                    <li><strong>Best for:</strong> Exploring all possible paths</li>
+                    <li><strong>Guarantee:</strong> Not optimal (may not find shortest path)</li>
+                    <li><strong>Approach:</strong> Deep exploration first</li>
+                    <li><strong>Complexity:</strong> O(V + E) where V is vertices, E is edges</li>
+                </ul>
+            `
+        };
+
+        // Initialize the application
+        function init() {
+            createGrid();
+            setupEventListeners();
+            updateDisplay();
+            updateAlgorithmDescription();
+        }
+
+        // Create the grid
+        function createGrid() {
+            grid = [];
+            for (let y = 0; y < gridSize; y++) {
+                grid[y] = [];
+                for (let x = 0; x < gridSize; x++) {
+                    grid[y][x] = {
+                        x: x,
+                        y: y,
+                        isWall: false,
+                        terrain: 'grass',
+                        cost: 1
+                    };
+                }
+            }
+            renderGrid();
+        }
+
+        // Render the grid
+        function renderGrid() {
+            const container = document.getElementById('gridContainer');
+            container.style.gridTemplateColumns = `repeat(${gridSize}, 25px)`;
+            container.innerHTML = '';
+
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell';
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    
+                    // Set cell class based on state
+                    if (startPoint && startPoint.x === x && startPoint.y === y) {
+                        cell.classList.add('cell-start');
+                    } else if (endPoint && endPoint.x === x && endPoint.y === y) {
+                        cell.classList.add('cell-end');
+                    } else if (grid[y][x].isWall) {
+                        cell.classList.add('cell-wall');
+                    } else if (animationPath.some(p => p.x === x && p.y === y)) {
+                        cell.classList.add('cell-animated');
+                    } else if (path.some(p => p.x === x && p.y === y)) {
+                        cell.classList.add('cell-path');
+                    } else {
+                        cell.classList.add(`cell-${grid[y][x].terrain}`);
+                    }
+
+                    cell.addEventListener('click', () => handleCellClick(x, y));
+                    container.appendChild(cell);
+                }
+            }
+        }
+
+        // Handle cell clicks
+        function handleCellClick(x, y) {
+            if (currentMode === 'start') {
+                // Clear previous start point if exists
+                if (startPoint) {
+                    const prevCell = document.querySelector(`[data-x="${startPoint.x}"][data-y="${startPoint.y}"]`);
+                    if (prevCell) {
+                        prevCell.classList.remove('cell-start');
+                        prevCell.classList.add(`cell-${grid[startPoint.y][startPoint.x].terrain}`);
+                    }
+                }
+                
+                startPoint = { x, y };
+                currentMode = 'end';
+                updateModeButtons();
+                
+                // Add visual feedback
+                showClickFeedback(x, y, '#28a745');
+                
+            } else if (currentMode === 'end') {
+                // Clear previous end point if exists
+                if (endPoint) {
+                    const prevCell = document.querySelector(`[data-x="${endPoint.x}"][data-y="${endPoint.y}"]`);
+                    if (prevCell) {
+                        prevCell.classList.remove('cell-end');
+                        prevCell.classList.add(`cell-${grid[endPoint.y][endPoint.x].terrain}`);
+                    }
+                }
+                
+                endPoint = { x, y };
+                currentMode = 'wall';
+                updateModeButtons();
+                
+                // Automatically activate wall mode button for convenience
+                const wallButton = document.querySelector('[data-mode="wall"]');
+                if (wallButton) {
+                    wallButton.classList.add('active');
+                }
+                
+                // Add visual feedback
+                showClickFeedback(x, y, '#dc3545');
+                
+            } else if (currentMode === 'wall') {
+                grid[y][x].isWall = !grid[y][x].isWall;
+                renderGrid();
+            } else if (currentMode === 'terrain') {
+                grid[y][x].terrain = selectedTerrain;
+                grid[y][x].cost = terrainCosts[selectedTerrain];
+                renderGrid();
+            }
+        }
+
+        // Show click feedback animation
+        function showClickFeedback(x, y, color) {
+            const cell = document.querySelector(`[data-x="${x}"][data-y="${y}"]`);
+            if (cell) {
+                // Add a temporary highlight effect
+                cell.style.transform = 'scale(1.2)';
+                cell.style.boxShadow = `0 0 15px ${color}`;
+                cell.style.transition = 'all 0.3s ease';
+                
+                setTimeout(() => {
+                    cell.style.transform = 'scale(1)';
+                    cell.style.boxShadow = '';
+                    renderGrid(); // Re-render to show proper styling
+                }, 300);
+            }
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Mode buttons
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentMode = btn.dataset.mode;
+                    updateModeButtons();
+                });
+            });
+
+            // Terrain buttons
+            document.querySelectorAll('.terrain-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    selectedTerrain = btn.dataset.terrain;
+                    updateTerrainButtons();
+                });
+            });
+
+            // Control buttons
+            document.getElementById('findPathBtn').addEventListener('click', findPath);
+            document.getElementById('resetBtn').addEventListener('click', resetGrid);
+            document.getElementById('saveBtn').addEventListener('click', showSaveModal);
+            document.getElementById('loadBtn').addEventListener('click', showLoadModal);
+
+            // Selects
+            document.getElementById('gridSizeSelect').addEventListener('change', (e) => {
+                gridSize = parseInt(e.target.value);
+                resetGrid();
+                updateDisplay();
+            });
+
+            document.getElementById('algorithmSelect').addEventListener('change', (e) => {
+                currentAlgorithm = e.target.value;
+                updateDisplay();
+                updateAlgorithmDescription();
+            });
+
+            // Modal buttons
+            document.getElementById('confirmSaveBtn').addEventListener('click', saveRoute);
+            document.getElementById('cancelSaveBtn').addEventListener('click', hideSaveModal);
+            document.getElementById('closeLoadBtn').addEventListener('click', hideLoadModal);
+        }
+
+        // Update mode buttons
+        function updateModeButtons() {
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.mode === currentMode) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Show/hide terrain buttons
+            const terrainButtons = document.getElementById('terrainButtons');
+            terrainButtons.style.display = currentMode === 'terrain' ? 'flex' : 'none';
+        }
+
+        // Update terrain buttons
+        function updateTerrainButtons() {
+            document.querySelectorAll('.terrain-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.terrain === selectedTerrain) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        // Find path using selected algorithm
+        async function findPath() {
+            if (!startPoint || !endPoint || isAnimating) return;
+
+            const startTime = performance.now();
+            
+            switch (currentAlgorithm) {
+                case 'astar':
+                    path = findPathAStar();
+                    break;
+                case 'dijkstra':
+                    path = findPathDijkstra();
+                    break;
+                case 'bfs':
+                    path = findPathBFS();
+                    break;
+                case 'dfs':
+                    path = findPathDFS();
+                    break;
+            }
+
+            const endTime = performance.now();
+            executionTime = endTime - startTime;
+
+            if (path.length > 0) {
+                await animatePath();
+            }
+
+            updateStats();
+            renderGrid();
+        }
+
+        // A* Algorithm
+        function findPathAStar() {
+            const openSet = [];
+            const closedSet = new Set();
+            const start = grid[startPoint.y][startPoint.x];
+            const end = grid[endPoint.y][endPoint.x];
+
+            // Initialize start node
+            start.g = 0;
+            start.h = heuristic(start, end);
+            start.f = start.g + start.h;
+            start.parent = null;
+            openSet.push(start);
+
+            while (openSet.length > 0) {
+                // Find node with lowest f-value
+                let current = openSet[0];
+                let currentIndex = 0;
+
+                for (let i = 1; i < openSet.length; i++) {
+                    if (openSet[i].f < current.f) {
+                        current = openSet[i];
+                        currentIndex = i;
+                    }
+                }
+
+                // Check if we reached the goal
+                if (current.x === end.x && current.y === end.y) {
+                    return reconstructPath(current);
+                }
+
+                // Remove current from open set and add to closed set
+                openSet.splice(currentIndex, 1);
+                closedSet.add(`${current.x},${current.y}`);
+
+                // Check all neighbors
+                const neighbors = getNeighbors(current);
+                for (const neighbor of neighbors) {
+                    const neighborKey = `${neighbor.x},${neighbor.y}`;
+                    
+                    // Skip if neighbor is in closed set
+                    if (closedSet.has(neighborKey)) continue;
+
+                    // Calculate tentative g score
+                    const tentativeG = current.g + neighbor.cost;
+
+                    // Check if neighbor is not in open set or if we found a better path
+                    const neighborInOpenSet = openSet.some(node => node.x === neighbor.x && node.y === neighbor.y);
+                    
+                    if (!neighborInOpenSet) {
+                        // Add neighbor to open set
+                        neighbor.g = tentativeG;
+                        neighbor.h = heuristic(neighbor, end);
+                        neighbor.f = neighbor.g + neighbor.h;
+                        neighbor.parent = current;
+                        openSet.push(neighbor);
+                    } else if (tentativeG < neighbor.g) {
+                        // Update neighbor with better path
+                        neighbor.g = tentativeG;
+                        neighbor.f = neighbor.g + neighbor.h;
+                        neighbor.parent = current;
+                    }
+                }
+            }
+
+            return [];
+        }
+
+        // Dijkstra's Algorithm
+        function findPathDijkstra() {
+            const distances = new Map();
+            const previous = new Map();
+            const unvisited = new Set();
+            const start = grid[startPoint.y][startPoint.x];
+            const end = grid[endPoint.y][endPoint.x];
+
+            // Initialize distances
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    const key = `${x},${y}`;
+                    distances.set(key, Infinity);
+                    unvisited.add(key);
+                }
+            }
+
+            distances.set(`${start.x},${start.y}`, 0);
+
+            while (unvisited.size > 0) {
+                let currentKey = '';
+                let minDistance = Infinity;
+
+                for (const key of unvisited) {
+                    const distance = distances.get(key);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        currentKey = key;
+                    }
+                }
+
+                if (minDistance === Infinity) break;
+
+                const [currentX, currentY] = currentKey.split(',').map(Number);
+                const current = grid[currentY][currentX];
+
+                if (current.x === end.x && current.y === end.y) {
+                    return reconstructPathFromMap(current, previous);
+                }
+
+                unvisited.delete(currentKey);
+
+                const neighbors = getNeighbors(current);
+                for (const neighbor of neighbors) {
+                    const neighborKey = `${neighbor.x},${neighbor.y}`;
+                    if (!unvisited.has(neighborKey)) continue;
+
+                    const distance = distances.get(currentKey);
+                    const newDistance = distance + neighbor.cost;
+
+                    if (newDistance < distances.get(neighborKey)) {
+                        distances.set(neighborKey, newDistance);
+                        previous.set(neighborKey, current);
+                    }
+                }
+            }
+
+            return [];
+        }
+
+        // Breadth-First Search
+        function findPathBFS() {
+            const queue = [];
+            const visited = new Set();
+            const parent = new Map();
+            const start = grid[startPoint.y][startPoint.x];
+            const end = grid[endPoint.y][endPoint.x];
+
+            queue.push(start);
+            visited.add(`${start.x},${start.y}`);
+
+            while (queue.length > 0) {
+                const current = queue.shift();
+
+                if (current.x === end.x && current.y === end.y) {
+                    return reconstructPathFromMap(current, parent);
+                }
+
+                const neighbors = getNeighbors(current);
+                for (const neighbor of neighbors) {
+                    const key = `${neighbor.x},${neighbor.y}`;
+                    if (!visited.has(key)) {
+                        visited.add(key);
+                        parent.set(key, current);
+                        queue.push(neighbor);
+                    }
+                }
+            }
+
+            return [];
+        }
+
+        // Depth-First Search
+        function findPathDFS() {
+            const visited = new Set();
+            const parent = new Map();
+            const start = grid[startPoint.y][startPoint.x];
+            const end = grid[endPoint.y][endPoint.x];
+
+            function dfs(current) {
+                const key = `${current.x},${current.y}`;
+                visited.add(key);
+
+                if (current.x === end.x && current.y === end.y) {
+                    return true;
+                }
+
+                const neighbors = getNeighbors(current);
+                for (const neighbor of neighbors) {
+                    const neighborKey = `${neighbor.x},${neighbor.y}`;
+                    if (!visited.has(neighborKey)) {
+                        parent.set(neighborKey, current);
+                        if (dfs(neighbor)) {
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
+            }
+
+            if (dfs(start)) {
+                return reconstructPathFromMap(end, parent);
+            }
+
+            return [];
+        }
+
+        // Helper functions
+        function heuristic(pos0, pos1) {
+            const dx = Math.abs(pos1.x - pos0.x);
+            const dy = Math.abs(pos1.y - pos0.y);
+            return dx + dy;
+        }
+
+        function getNeighbors(node) {
+            const neighbors = [];
+            const { x, y } = node;
+
+            const directions = [
+                { dx: -1, dy: 0 }, // Left
+                { dx: 1, dy: 0 },  // Right
+                { dx: 0, dy: -1 }, // Up
+                { dx: 0, dy: 1 },  // Down
+            ];
+
+            for (const { dx, dy } of directions) {
+                const newX = x + dx;
+                const newY = y + dy;
+                
+                if (newX >= 0 && newX < gridSize && newY >= 0 && newY < gridSize) {
+                    const neighbor = grid[newY][newX];
+                    if (!neighbor.isWall) {
+                        neighbors.push(neighbor);
+                    }
+                }
+            }
+
+            return neighbors;
+        }
+
+        function reconstructPath(endNode) {
+            const path = [];
+            let current = endNode;
+            
+            while (current !== null) {
+                path.push(current);
+                current = current.parent;
+            }
+            
+            return path.reverse();
+        }
+
+        function reconstructPathFromMap(endNode, parent) {
+            const path = [];
+            let current = endNode;
+            
+            while (current !== null) {
+                path.push(current);
+                const key = `${current.x},${current.y}`;
+                current = parent.get(key) || null;
+            }
+            
+            return path.reverse();
+        }
+
+        // Animate path
+        async function animatePath() {
+            isAnimating = true;
+            animationPath = [];
+            
+            for (let i = 0; i < path.length; i++) {
+                await new Promise(resolve => setTimeout(resolve, 30));
+                animationPath = path.slice(0, i + 1);
+                renderGrid();
+            }
+            
+            isAnimating = false;
+        }
+
+        // Reset grid
+        function resetGrid() {
+            startPoint = null;
+            endPoint = null;
+            path = [];
+            animationPath = [];
+            currentMode = 'start';
+            executionTime = 0;
+            createGrid();
+            updateModeButtons();
+            updateStats();
+        }
+
+        // Save route
+        function showSaveModal() {
+            if (path.length === 0) return;
+            document.getElementById('saveModal').style.display = 'block';
+        }
+
+        function hideSaveModal() {
+            document.getElementById('saveModal').style.display = 'none';
+            document.getElementById('routeNameInput').value = '';
+        }
+
+        function saveRoute() {
+            const name = document.getElementById('routeNameInput').value.trim();
+            if (!name) return;
+
+            const savedRoutes = JSON.parse(localStorage.getItem('savedRoutes') || '[]');
+            const routeData = {
+                id: Date.now().toString(),
+                name: name,
+                timestamp: Date.now(),
+                gridSize: gridSize,
+                grid: grid,
+                startPoint: startPoint,
+                endPoint: endPoint,
+                algorithm: currentAlgorithm,
+                path: path
+            };
+
+            savedRoutes.push(routeData);
+            localStorage.setItem('savedRoutes', JSON.stringify(savedRoutes));
+            hideSaveModal();
+        }
+
+        // Load routes
+        function showLoadModal() {
+            const savedRoutes = JSON.parse(localStorage.getItem('savedRoutes') || '[]');
+            const list = document.getElementById('savedRoutesList');
+            
+            if (savedRoutes.length === 0) {
+                list.innerHTML = '<p>No saved routes</p>';
+            } else {
+                list.innerHTML = savedRoutes.map(route => `
+                    <div class="route-item">
+                        <div class="route-info">
+                            <h4>${route.name}</h4>
+                            <p>${new Date(route.timestamp).toLocaleString()}</p>
+                        </div>
+                        <div class="route-actions">
+                            <button class="btn btn-success btn-small" onclick="loadRoute('${route.id}')">Load</button>
+                            <button class="btn btn-danger btn-small" onclick="deleteRoute('${route.id}')">Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            document.getElementById('loadModal').style.display = 'block';
+        }
+
+        function hideLoadModal() {
+            document.getElementById('loadModal').style.display = 'none';
+        }
+
+        function loadRoute(id) {
+            const savedRoutes = JSON.parse(localStorage.getItem('savedRoutes') || '[]');
+            const route = savedRoutes.find(r => r.id === id);
+            
+            if (route) {
+                gridSize = route.gridSize;
+                grid = route.grid;
+                startPoint = route.startPoint;
+                endPoint = route.endPoint;
+                currentAlgorithm = route.algorithm;
+                path = route.path;
+                animationPath = route.path;
+                currentMode = 'wall';
+                
+                document.getElementById('gridSizeSelect').value = gridSize;
+                document.getElementById('algorithmSelect').value = currentAlgorithm;
+                
+                createGrid();
+                updateModeButtons();
+                updateDisplay();
+                hideLoadModal();
+            }
+        }
+
+        function deleteRoute(id) {
+            const savedRoutes = JSON.parse(localStorage.getItem('savedRoutes') || '[]');
+            const filteredRoutes = savedRoutes.filter(r => r.id !== id);
+            localStorage.setItem('savedRoutes', JSON.stringify(filteredRoutes));
+            showLoadModal(); // Refresh the modal
+        }
+
+        // Update statistics
+        function updateStats() {
+            const distance = path.length > 0 ? path.length - 1 : 0;
+            const cost = path.reduce((total, node, index) => {
+                return total + (index > 0 ? node.cost : 0);
+            }, 0);
+            const time = cost * 10; // 10 minutes per cost unit
+            const efficiency = startPoint && endPoint && path.length > 0 
+                ? Math.round((Math.abs(endPoint.x - startPoint.x) + Math.abs(endPoint.y - startPoint.y)) / distance * 100)
+                : 0;
+
+            document.getElementById('distanceStat').textContent = distance;
+            document.getElementById('timeStat').textContent = Math.round(time);
+            document.getElementById('costStat').textContent = cost.toFixed(1);
+            document.getElementById('efficiencyStat').textContent = efficiency + '%';
+            document.getElementById('pathLength').textContent = distance;
+
+            if (executionTime > 0) {
+                document.getElementById('execTimeValue').textContent = executionTime.toFixed(2);
+                document.getElementById('executionTime').style.display = 'block';
+            } else {
+                document.getElementById('executionTime').style.display = 'none';
+            }
+
+            document.getElementById('pathInfo').style.display = path.length > 0 ? 'block' : 'none';
+        }
+
+        // Update display
+        function updateDisplay() {
+            document.getElementById('gridSizeDisplay').textContent = `${gridSize}×${gridSize}`;
+            document.getElementById('algorithmDisplay').textContent = currentAlgorithm.toUpperCase();
+            document.getElementById('currentAlgorithm').textContent = currentAlgorithm.toUpperCase();
+            document.getElementById('currentGridSize').textContent = `${gridSize}×${gridSize}`;
+            document.getElementById('totalCells').textContent = gridSize * gridSize;
+            document.getElementById('pathCoverage').textContent = path.length > 0 
+                ? ((path.length / (gridSize * gridSize)) * 100).toFixed(1) + '%' 
+                : '0%';
+        }
+
+        // Update algorithm description
+        function updateAlgorithmDescription() {
+            const description = document.getElementById('algorithmDescription');
+            const algorithm = currentAlgorithm.toUpperCase();
+            const descriptionText = algorithmDescriptions[algorithm] || 'No description available';
+            description.innerHTML = descriptionText;
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', init);
+    </script>
+  </body>
+</html>
