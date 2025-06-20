@@ -4,7 +4,7 @@ An interactive web application that demonstrates and compares different pathfind
 
 ## 🚀 Live Demo
 
-[View the live demo here](#) - [*Add your deployed URL here*](https://route-optimizer-visualizer.vercel.app/)
+[View the live demo here](#) - (https://route-optimizer-visualizer.vercel.app/)
 
 ## ✨ Features
 
