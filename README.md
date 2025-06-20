@@ -4,7 +4,12 @@ An interactive web application that demonstrates and compares different pathfind
 
 ## 🚀 Live Demo
 
-[View the live demo here](#) - (https://route-optimizer-visualizer.vercel.app/)
+[View the live demo here](https://route-optimizer-visualizer.vercel.app/)
+
+## ✨ Features
+
+- **Multiple Algorithms**: A*, Dijkstra's, Breadth-First Search, Depth-First Search
+
 
 ## ✨ Features
 
